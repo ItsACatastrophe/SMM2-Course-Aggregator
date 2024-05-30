@@ -7,10 +7,9 @@ import atexit
 import argparse
 from datetime import datetime, timedelta
 from textwrap import dedent
-import threading
 
-import constants
-import results
+import src.constants
+import src.results
 
 count_superball_courses = 0
 

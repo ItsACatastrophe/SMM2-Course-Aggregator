@@ -2,13 +2,13 @@ from datetime import datetime
 from subprocess import run
 import sys
 
-from apiclient import ApiClient
-import constants
-from course import Course
-from db import Db, RowFormatter
-import results
-import runner
-import utils
+from src.apiclient import ApiClient
+import src.constants
+from src.course import Course
+from src.db import Db, RowFormatter
+import src.results
+import src.runner
+import src.utils
         
 if __name__ == "__main__":
     

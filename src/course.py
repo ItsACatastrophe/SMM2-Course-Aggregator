@@ -1,7 +1,7 @@
 import itertools
 import json
 
-from utils import seek_get
+from src.utils import seek_get
 
 class Object:
     SUPERBALL_BIT_POSITION = [3, 26, 27]

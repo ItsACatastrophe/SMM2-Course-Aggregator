@@ -6,8 +6,8 @@ import os
 from textwrap import dedent
 from zoneinfo import ZoneInfo
 
-import constants
-import utils
+import src.constants
+import src.utils
 
 DB_NAME = './superdb'
 COURSES_PATH = './results/superball_courses.csv'

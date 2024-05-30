@@ -3,14 +3,14 @@ from subprocess import run
 import sys
 from textwrap import dedent
 
-from apiclient import ApiClient
-import constants
-from course import Course
-from datetime import datetime
-import db
-import results
-import runner
-import utils
+from src.apiclient import ApiClient
+import src.constants
+from src.course import Course
+from src.datetime import datetime
+import src.db
+import src.results
+import src.runner
+import src.utils
 
 def get_args():
     parser = argparse.ArgumentParser(

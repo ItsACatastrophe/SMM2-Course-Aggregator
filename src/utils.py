@@ -1,5 +1,6 @@
-import constants
 from random import randint
+
+import src.constants
 
 i_offset = randint(0,3)
 

@@ -2,7 +2,7 @@ import time
 import requests
 import json
 
-import constants
+import src.constants
 
 
 class ApiException(Exception):

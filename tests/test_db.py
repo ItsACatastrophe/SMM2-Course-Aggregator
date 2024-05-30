@@ -1,9 +1,6 @@
 import sys
 
-print(sys.path)
-
-import collector.db
-# from .. import db
+import src.db
 import sqlite3
 import unittest
 

@@ -1,7 +1,7 @@
 import csv
 import os
 
-from course import Course
+from src.course import Course
 
 # TODO: I think I need to rethink how files are treated by the program.
 # We write and read from the same file. Perhaps testing when data is saved
