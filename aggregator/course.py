@@ -1,7 +1,10 @@
 import itertools
 import json
 
-from aggregator.utils import seek_get
+
+def seek_get(data, offset, size):
+    data.seek(offset)
+    return data.read(size)
 
 
 class Object:
@@ -40,7 +43,7 @@ class Object:
         self.id = o_id
         return self
 
-    def set_flag(self, o_flag):
+    def set_flags(self, o_flag):
         self.flag = o_flag
         return self
 
@@ -96,7 +99,8 @@ class Object:
         if self.id == 34:
             out = is_flag_superball(self.flag)
 
-        elif self.id in Object.SUPERBALL_CONTAINER_IDS and self.child_id == 34:
+        # Note: let's try this and see if there's any false positives
+        elif self.child_id == 34:  # and self.id in Object.SUPERBALL_CONTAINER_IDS:
             out = is_flag_superball(self.child_flags)
 
         return out
@@ -150,7 +154,7 @@ class CourseArea:
             test_object = (
                 Object()
                 .set_id(object_id)
-                .set_flag(object_flag)
+                .set_flags(object_flag)
                 .set_child_id(child_id)
                 .set_child_flags(child_flags)
                 .set_coords(x_coord, y_coord)
@@ -172,7 +176,7 @@ class Course:
         self.course_code = course_code
 
         # Course Header
-        self.course_style = str(seek_get(data, 0xF1, 0x2))
+        self.course_style = seek_get(data, 0xF1, 0x2).decode()
         self.course_description = seek_get(data, 0x136, 0xCA).decode("utf-16-le")
         self.course_name = seek_get(data, 0xF4, 0x42).decode("utf-16-le").split("\0")[0]
 

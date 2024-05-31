@@ -9,7 +9,7 @@ from zoneinfo import ZoneInfo
 from aggregator import constants, utils
 
 
-DB_NAME = "./superdb"
+DB_NAME = "./course_db"
 COURSES_PATH = "./results/superball_courses.csv"
 
 UNDERLINE_CHAR = "\033[4m"
@@ -17,13 +17,14 @@ ITALICS_CHAR = "\x1B[0m "
 END_CHAR = "\033[0m"
 
 
+# NOTE: this step should've been a sort of migration runner
 class DbManager:
     """
     Manages setup and migrations for the DB
     """
 
-    def __init__(self):
-        self.db_name = DB_NAME
+    def __init__(self, db_name=None):
+        self.db_name = db_name or DB_NAME
         self.does_db_exist = os.path.exists(self.db_name)
         self.con = None
 
@@ -31,6 +32,9 @@ class DbManager:
         if not self.does_db_exist:
             self.con = sqlite3.connect(self.db_name)
 
+            # NOTE, level names can be >64 characters long.
+            # SQLITE only uses text for all strings
+            # We got lucky
             create_course_sql = """
                 CREATE TABLE course (
                     id INTEGER PRIMARY KEY AUTOINCREMENT, 
@@ -157,8 +161,10 @@ class Db:
     # Mutates records retrieved to be played=1
     def get_courses(self, args, formatter=RowFormatter.no_formatting):
         sql_filters = ""
-        sql_filters += self.get_filter("difficulty", "=", args.difficulty)
-        sql_filters += self.get_filter("superball_count", ">=", args.superball_count)
+        sql_filters += self.get_filter("difficulty", "=", args.get("difficulty"))
+        sql_filters += self.get_filter(
+            "superball_count", ">=", args.get("superball_count")
+        )
 
         get_courses_sql = f"""
             SELECT *
@@ -166,7 +172,7 @@ class Db:
             WHERE played = 0
             {sql_filters}
             ORDER BY RANDOM() 
-            LIMIT {args.count};
+            LIMIT {args.get('count')};
         """
         courses = self.con.execute(get_courses_sql).fetchall()
 
@@ -196,7 +202,7 @@ class Db:
 
     def get_by_course_code(self, args, formatter=RowFormatter.no_formatting):
         sql_filters = ""
-        sql_filters += self.get_filter("code", "=", args.code)
+        sql_filters += self.get_filter("code", "=", args.get("code"))
         sql = f"""
             SELECT *
             FROM course c
@@ -204,7 +210,7 @@ class Db:
             {sql_filters};
         """
         results = self.con.execute(sql).fetchall()
-        if args.unplay:
+        if args.get("unplay"):
             course_codes = map(lambda c: c["code"], results)
             for code in course_codes:
                 test = self.set_course_unplayed(code)
@@ -222,7 +228,30 @@ class Db:
         results = self.con.execute(get_summary_sql).fetchall()
         return formatter(results)
 
+    def get_duplicate_courses(self, formatter=RowFormatter.no_formatting):
+        get_duplicate_sql = """
+            SELECT name, code, count(id) as total
+            FROM course
+            GROUP BY name, code
+            HAVING total > 1
+        """
+        results = self.con.execute(get_duplicate_sql).fetchall()
+        return formatter(results)
+
+    def get_course_by_code_and_name(
+        self, name, code, formatter=RowFormatter.no_formatting
+    ):
+        get_sql = """
+        SELECT *
+        FROM course
+        WHERE name = ?
+        AND code = ?
+        """
+        results = self.con.execute(get_sql, (name, code)).fetchall()
+        return formatter(results)
+
     ##### DB Mutations
+
     def insert_new_course(self, course):
         course_data = course.get_course_data()
 
@@ -315,13 +344,13 @@ if __name__ == "__main__":
         )
         return parser.parse_args()
 
-    args = get_args()
-    args.code = utils.format_course_code(args.code)
+    args = vars(get_args())
+    args["code"] = utils.format_course_code(args.get("code"))
 
     database = Db()
     formatter = RowFormatter()
 
-    if args.code:
+    if args.get("code"):
         results = database.get_by_course_code(args, formatter.format_courses)
     else:
         results = database.get_courses(args, formatter.format_courses)
