@@ -1,8 +1,8 @@
-import sys
-
-import src.db
 import sqlite3
+import sys
 import unittest
+
+from aggregator import db
 
 class TestFormatter(unittest.TestCase):
     def test_format_summary(self):

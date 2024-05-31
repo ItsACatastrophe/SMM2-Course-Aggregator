@@ -3,17 +3,17 @@ Not really a good name for this file.
 This code facilitates the inputs of the file and the
 delayed shutoff of application.
 """
+
 import atexit
 import argparse
 from datetime import datetime, timedelta
 from textwrap import dedent
 
-import src.constants
-import src.results
+from aggregator import constants, results
 
 count_superball_courses = 0
-
 files_to_close = list()
+
 
 def get_args():
     parser = argparse.ArgumentParser(
@@ -61,29 +61,30 @@ def get_args():
     )
     return parser.parse_args()
 
+
 def start_script_for(args):
     global end_datetime
-    
+
     atexit.register(exit_register)
-    
-    if args.hours or args.minutes or args.seconds :
-        end_datetime = datetime.now() + timedelta(hours=args.hours, minutes=args.minutes, seconds=args.seconds)
-        
+
+    if args.hours or args.minutes or args.seconds:
+        end_datetime = datetime.now() + timedelta(
+            hours=args.hours, minutes=args.minutes, seconds=args.seconds
+        )
+
     else:
-        raise Exception('Must supply an input to the script')
-    
+        raise Exception("Must supply an input to the script")
+
+
 def should_exit():
     return end_datetime <= datetime.now()
+
 
 def exit_register():
     for file_to_close in files_to_close:
         file_to_close.close()
-    
-    print(constants.ERASE_LINE, end="") 
-    print(f"Found {count_superball_courses} new levels with superballs! {':)' if count_superball_courses > 0 else ':('}")
-    
-        
-        
-        
-        
-        
+
+    print(constants.ERASE_LINE, end="")
+    print(
+        f"Found {count_superball_courses} new levels with superballs! {':)' if count_superball_courses > 0 else ':('}"
+    )
