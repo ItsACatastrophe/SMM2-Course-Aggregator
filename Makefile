@@ -3,10 +3,10 @@ install:
 	python -m pip install -r requirements.txt
 
 collect-courses:
-	python src/main.py -o 12
+	python main.py -o 12
 
 get-course:
-	python src/db.py
+	python main_db.py
 
 test-unit:
 	python -m unittest

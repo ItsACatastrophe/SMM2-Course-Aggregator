@@ -1,6 +1,6 @@
 # Project specific
 course_db
-courseDecrypter
+courseDecryptor
 
 # Byte-compiled / optimized / DLL files
 __pycache__/

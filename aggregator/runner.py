@@ -9,9 +9,9 @@ import argparse
 from datetime import datetime, timedelta
 from textwrap import dedent
 
-from aggregator import constants, results
+from aggregator import constants, db, results
 
-count_superball_courses = 0
+count_wanted_courses = 0
 files_to_close = list()
 
 
@@ -20,8 +20,8 @@ def get_args():
         formatter_class=argparse.RawDescriptionHelpFormatter,
         description=dedent(
             """
-            Fetches levels from SMM2 endless, downloads SMB1 tileset levels, and
-            processes them to identify if they contain a superball.
+            Fetches courses from SMM2 endless, downloads SMB1 tileset courses, and
+            processes them to identify if they contain the wanted object.
             Inputs of the application indicate how long to run for.
             """
         ),
@@ -56,8 +56,30 @@ def get_args():
         choices=["e", "n", "ex", "sex"],
         default="",
         dest="difficulty",
-        help="Difficulty of levels to search through. Options are 'e', 'n', 'ex', 'sex'. If undefined will randomly iterate over options",
+        help="Difficulty of courses to search through. Options are 'e', 'n', 'ex', 'sex'. If undefined will randomly iterate over options.",
         type=str,
+    )
+    parser.add_argument(
+        "-i",
+        "--wanted_id",
+        default=34,
+        dest="wanted_id",
+        help="The bit string of the object that courses should be searched for. See README.md for more information.",
+        type=int,
+    )
+    parser.add_argument(
+        "-f",
+        "--wanted_flag",
+        default=None,
+        dest="wanted_flag_bits",
+        help='The bit string flag of the object that courses should be searched for. See README.md for more information (e.g. "00000110000000000000000000000100")',
+    )
+    parser.add_argument(
+        "-n",
+        "--db-name",
+        default=db.DB_NAME,
+        dest="db_name",
+        help="The name of the DB. Different DB names allows stores of courses containing different objects.",
     )
     return parser.parse_args()
 
@@ -86,5 +108,5 @@ def exit_register():
 
     print(constants.ERASE_LINE, end="")
     print(
-        f"Found {count_superball_courses} new levels with superballs! {':)' if count_superball_courses > 0 else ':('}"
+        f"Found {count_wanted_courses} new courses! {':)' if count_wanted_courses > 0 else ':('}"
     )

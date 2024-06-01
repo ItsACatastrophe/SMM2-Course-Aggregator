@@ -5,9 +5,9 @@ from aggregator import constants
 i_offset = randint(0, 3)
 
 
-def print_status(print_text, count_superball_courses: int):
+def print_status(print_text, count_wanted_courses: int):
     print(
-        f"{constants.ERASE_LINE}[Found {count_superball_courses} Superballs] - {print_text}",
+        f"{constants.ERASE_LINE}[Found {count_wanted_courses}] - {print_text}",
         end="",
     )
 
@@ -24,8 +24,8 @@ def clear_decrypter_stdout():
 
 def get_difficulty(difficulty: str, loop: int):
     if difficulty == "":
-        difficulty_index = (loop + i_offset) % len(constants.LEVEL_DIFFICULTIES)
-        difficulty = constants.LEVEL_DIFFICULTIES[difficulty_index]
+        difficulty_index = (loop + i_offset) % len(constants.course_DIFFICULTIES)
+        difficulty = constants.course_DIFFICULTIES[difficulty_index]
 
     return difficulty
 

@@ -27,7 +27,7 @@ class TestApiClient(unittest.TestCase):
         # All API calls usually sleep 1s minimum, bad for unit test
         time.sleep = MagicMock()
 
-    def test_get_possible_levels(self):
+    def test_get_possible_courses(self):
         response = MockResponse(
             200,
             {
@@ -40,7 +40,7 @@ class TestApiClient(unittest.TestCase):
         )
         requests.get = MagicMock(return_value=response)
 
-        course_list = self.api_client.get_possible_levels("e")
+        course_list = self.api_client.get_possible_courses("e")
 
         self.assertTrue(requests.get.called)
         self.assertTrue(time.sleep.called)
@@ -49,7 +49,7 @@ class TestApiClient(unittest.TestCase):
         for name in map(lambda course: course.get("game_style_name"), course_list):
             self.assertEqual(name, "SMB1")
 
-    def test_get_possible_levels_exists_already(self):
+    def test_get_possible_courses_exists_already(self):
         response = MockResponse(200, {"courses": [{"game_style_name": "SMB1"}]})
         requests.get = MagicMock(return_value=response)
 
@@ -57,17 +57,17 @@ class TestApiClient(unittest.TestCase):
             return_value=[{"one": "element"}]
         )
 
-        course_list = self.api_client.get_possible_levels("e")
+        course_list = self.api_client.get_possible_courses("e")
 
         self.assertTrue(self.db.get_course_by_code_and_name.called)
         self.assertIs(len(course_list), 0)
 
-    def test_get_possible_levels_fail(self):
+    def test_get_possible_courses_fail(self):
         response = MockResponse(500)
         requests.get = MagicMock(return_value=response)
 
         try:
-            self.api_client.get_possible_levels("e")
+            self.api_client.get_possible_courses("e")
         except apiclient.ApiException:
             self.assertTrue(requests.get.called)
             self.assertTrue(time.sleep.called)

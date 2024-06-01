@@ -2,14 +2,25 @@ import itertools
 import json
 
 
+def set_wanted_object(want_id: int, wanted_bit_str: str):
+    global wanted_id
+    global wanted_flag_bit_positions
+
+    wanted_id = want_id
+
+    # Gets bit positions of input wanted_object for Object comparison
+    wanted_flag_bit_positions = [
+        i + 1 for i in range(len(wanted_bit_str)) if wanted_bit_str[::-1][i] == "1"
+    ]
+
+
 def seek_get(data, offset, size):
     data.seek(offset)
     return data.read(size)
 
 
 class Object:
-    SUPERBALL_BIT_POSITION = [3, 26, 27]
-    SUPERBALL_CONTAINER_IDS = [5, 29, 23, 4, 30, 13]
+    CONTAINER_IDS = [5, 29, 23, 4, 30, 13]
 
     def __init__(self):
         self.id = None
@@ -64,6 +75,8 @@ class Object:
         return self
 
     def set_coords(self, x_pos, y_pos):
+        # Gets the on-screen coordinates of the object
+        # These are subdivided into 160th slices in course file
         def convert_to_cells(pos):
             return int((pos + 80) / 160)
 
@@ -83,12 +96,13 @@ class Object:
             "extended_data": self.extended_data,
         }
 
-    def is_superball(self):
-        def is_flag_superball(flag):
+    # TODO: use bitwise operators
+    def is_wanted(self):
+        def is_flag_wanted(flag):
             flag_binary = bin(flag)
 
             out = True
-            for bit in Object.SUPERBALL_BIT_POSITION:
+            for bit in wanted_flag_bit_positions:
                 if flag_binary[-bit] == "0":
                     out = False
                     break
@@ -96,12 +110,11 @@ class Object:
             return out
 
         out = False
-        if self.id == 34:
-            out = is_flag_superball(self.flag)
+        if self.id == wanted_id:
+            out = is_flag_wanted(self.flag)
 
-        # Note: let's try this and see if there's any false positives
-        elif self.child_id == 34:  # and self.id in Object.SUPERBALL_CONTAINER_IDS:
-            out = is_flag_superball(self.child_flags)
+        elif self.child_id == wanted_id:
+            out = is_flag_wanted(self.child_flags)
 
         return out
 
@@ -168,10 +181,19 @@ class CourseArea:
 
 
 class Course:
-    def __init__(self, data, difficulty, course_code):
+    def __init__(
+        self,
+        data,
+        difficulty,
+        course_code,
+        wanted_id,
+        wanted_bit_str,
+    ):
         self.data = data
 
-        self.superballs = []
+        set_wanted_object(wanted_id, wanted_bit_str)
+
+        self.wanteds = []
         self.difficulty = difficulty
         self.course_code = course_code
 
@@ -189,10 +211,10 @@ class Course:
         self.area_sub = CourseArea(data, area_sub_offset)
 
         for c_obj in [*self.area_main.objects, *self.area_sub.objects]:
-            if c_obj.is_superball():
-                self.superballs.append(c_obj)
+            if c_obj.is_wanted():
+                self.wanteds.append(c_obj)
 
-        self.has_superball = len(self.superballs) > 0
+        self.has_wanted = len(self.wanteds) > 0
 
     def __repr__(self):
         return json.dumps(
@@ -200,8 +222,8 @@ class Course:
                 "name": self.course_name,
                 "course_code": self.course_code,
                 "difficulty": self.difficulty,
-                "superball_count": len(self.superballs),
-                "superballs": [s.get_object_summary() for s in self.superballs],
+                "wanted_count": len(self.wanteds),
+                "wanteds": [s.get_object_summary() for s in self.wanteds],
             },
             indent=4,
         )
@@ -211,7 +233,7 @@ class Course:
 
     @staticmethod
     def get_course_repr_keys():
-        return ["name", "course_code", "difficulty", "superball_count"]
+        return ["name", "course_code", "difficulty", "wanted_count"]
 
     # TODO: rename this to not be so close to api client method name
     def get_course_data(self):
@@ -219,9 +241,9 @@ class Course:
             "name": self.course_name,
             "course_code": self.course_code,
             "difficulty": self.difficulty,
-            "superball_count": len(self.superballs),
+            "wanted_count": len(self.wanteds),
             "played": 0,
         }
 
-    def get_superballs(self):
-        return {"superballs": [s.get_object_summary() for s in self.superballs]}
+    def get_wanted(self):
+        return {"wanted": [s.get_object_summary() for s in self.wanteds]}

@@ -1,16 +1,13 @@
-import argparse
-import csv
 from datetime import datetime
 import sqlite3
 import os
-from textwrap import dedent
 from zoneinfo import ZoneInfo
 
-from aggregator import constants, utils
+from aggregator import constants
 
 
 DB_NAME = "./course_db"
-COURSES_PATH = "./results/superball_courses.csv"
+COURSES_PATH = "./results/wanted_courses.csv"
 
 UNDERLINE_CHAR = "\033[4m"
 ITALICS_CHAR = "\x1B[0m "
@@ -32,7 +29,7 @@ class DbManager:
         if not self.does_db_exist:
             self.con = sqlite3.connect(self.db_name)
 
-            # NOTE, level names can be >64 characters long.
+            # NOTE, course names can be >64 characters long.
             # SQLITE only uses text for all strings
             # We got lucky
             create_course_sql = """
@@ -41,7 +38,7 @@ class DbManager:
                     name VARCHAR(64), 
                     code VARCHAR(64), 
                     difficulty VARCHAR(2),
-                    superball_count INTEGER(200),
+                    wanted_count INTEGER(200),
                     played BOOL,
                 );
             """
@@ -67,11 +64,11 @@ class DbManager:
         if self.con is None:
             self.con = sqlite3.connect(self.db_name)
 
-        superball_courses_file = open(COURSES_PATH, "r")
-        reader = csv.DictReader(superball_courses_file)
+        wanted_courses_file = open(COURSES_PATH, "r")
+        reader = csv.DictReader(wanted_courses_file)
 
         sql = """
-            INSERT INTO course (name, code, difficulty, superball_count, played)
+            INSERT INTO course (name, code, difficulty, wanted_count, played)
             VALUES (?, ?, ?, ?, ?);
         """
 
@@ -82,7 +79,7 @@ class DbManager:
                     row.get("name"),
                     row.get("course_code"),
                     row.get("difficulty"),
-                    int(row.get("superball_count")),
+                    int(row.get("wanted_count")),
                     True if row.get("played") == "1" else False,
                     (
                         datetime.now(tz=ZoneInfo("America/New_York"))
@@ -104,8 +101,8 @@ class RowFormatter:
         return results
 
     def format_summary(self, results):
-        # Sort on order of constants.LEVEL_DIFFICULTIES
-        results.sort(key=lambda r: constants.LEVEL_DIFFICULTIES.index(r["difficulty"]))
+        # Sort on order of constants.course_DIFFICULTIES
+        results.sort(key=lambda r: constants.course_DIFFICULTIES.index(r["difficulty"]))
 
         formatted_results = []
         for r in results:
@@ -120,7 +117,7 @@ class RowFormatter:
                 r["code"][i : i + 3] for i in range(0, len(r["code"]), 3)
             )
             formatted_results.append(
-                f"{UNDERLINE_CHAR}{course_code}{END_CHAR} ({r['difficulty']}) {r['superball_count']} Superballs \"{r['name']}\""
+                f"{UNDERLINE_CHAR}{course_code}{END_CHAR} ({r['difficulty']}) {r['wanted_count']} \"{r['name']}\""
             )
 
         return "\n".join(formatted_results)
@@ -132,7 +129,7 @@ class RowFormatter:
 # as a whole and call the expected methods instead of allowing them to be passed
 # as method args. This allows unncessary freedom of usage.
 class Db:
-    def __init__(self, use_dict_factory=False):
+    def __init__(self, use_dict_factory=False, db_name=DB_NAME):
         self.manager = DbManager()
         self.manager.create_db_if_none()
 
@@ -162,9 +159,7 @@ class Db:
     def get_courses(self, args, formatter=RowFormatter.no_formatting):
         sql_filters = ""
         sql_filters += self.get_filter("difficulty", "=", args.get("difficulty"))
-        sql_filters += self.get_filter(
-            "superball_count", ">=", args.get("superball_count")
-        )
+        sql_filters += self.get_filter("wanted_count", ">=", args.get("wanted_count"))
 
         get_courses_sql = f"""
             SELECT *
@@ -260,13 +255,13 @@ class Db:
                 course_data.get("name"),
                 course_data.get("course_code"),
                 course_data.get("difficulty"),
-                int(course_data.get("superball_count")),
+                int(course_data.get("wanted_count")),
                 0,
             ]
         )
 
         insert_course_sql = """
-            INSERT INTO course (name, code, difficulty, superball_count, played)
+            INSERT INTO course (name, code, difficulty, wanted_count, played)
             VALUES (?, ?, ?, ?, ?);
         """
 
@@ -276,7 +271,7 @@ class Db:
     def set_course_unplayed(self, code, formatter=RowFormatter.no_formatting):
         """
         Use with care, code may not be enough for unqiueness
-        in cases where a level removed from SMM2 online
+        in cases where a course removed from SMM2 online
         makes it's code available for future use.
         """
         set_unplayed_course_sql = """
@@ -293,69 +288,3 @@ class Db:
         results = self.con.execute(set_unplayed_course_sql, fields).fetchall()
         self.con.commit()
         return formatter(results)
-
-
-if __name__ == "__main__":
-
-    def get_args():
-        parser = argparse.ArgumentParser(
-            formatter_class=argparse.RawDescriptionHelpFormatter,
-            description=dedent(
-                """
-                Grabs levels from the DB.
-                """
-            ),
-        )
-        parser.add_argument(
-            "-d",
-            "--difficulty",
-            choices=constants.LEVEL_DIFFICULTIES,
-            dest="difficulty",
-            type=str,
-            help="Restricts difficulty to the supplied input",
-        )
-        parser.add_argument(
-            "-s",
-            "--superball_count",
-            dest="superball_count",
-            type=int,
-            help="Sets the minimum number of superballs powerups",
-        )
-        parser.add_argument(
-            "-c",
-            "--count",
-            default=1,
-            dest="count",
-            type=int,
-            help="Increases the number of levels retrieved",
-        )
-        parser.add_argument(
-            "--code",
-            dest="code",
-            type=str,
-            help="Course code of level to retrieve. Ignores all usual seen operations",
-        )
-        parser.add_argument(
-            "--unplay",
-            action="store_true",
-            default=False,
-            dest="unplay",
-            help="If --unplay and --code is supplied, marks supplied course as played=0",
-        )
-        return parser.parse_args()
-
-    args = vars(get_args())
-    args["code"] = utils.format_course_code(args.get("code"))
-
-    database = Db()
-    formatter = RowFormatter()
-
-    if args.get("code"):
-        results = database.get_by_course_code(args, formatter.format_courses)
-    else:
-        results = database.get_courses(args, formatter.format_courses)
-
-    summary_results = database.get_db_summary(formatter.format_summary)
-
-    print(summary_results)
-    print(results)

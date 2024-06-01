@@ -34,7 +34,7 @@ class TestFormatter(unittest.TestCase):
 
         # Checks if difficulties are in order
         indices = list(
-            map(lambda d: formatted_summary.find(d), constants.LEVEL_DIFFICULTIES)
+            map(lambda d: formatted_summary.find(d), constants.course_DIFFICULTIES)
         )
         self.assertTrue(
             all(indices[i] < indices[i + 1] for i in range(len(indices) - 1))
@@ -47,7 +47,7 @@ class TestFormatter(unittest.TestCase):
                 'test-name' as name, 
                 'FOOBARBAZ' as code, 
                 'n' as difficulty, 
-                3 as superball_count
+                3 as wanted_count
             """
         ).fetchall()
 

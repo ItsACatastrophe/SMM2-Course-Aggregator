@@ -33,7 +33,7 @@ class ApiClient:
 
     @api_wait
     @retry_on_fail
-    def get_possible_levels(self, difficulty):
+    def get_possible_courses(self, difficulty):
         response = requests.get(
             f"https://tgrcode.com/mm2/search_endless_mode?count=300&difficulty={difficulty}",
             timeout=30,
@@ -63,12 +63,12 @@ class ApiClient:
 
     @api_wait
     @retry_on_fail
-    def get_level_data(self, course_code):
+    def get_course_data(self, course_code):
         response = requests.get(
-            f"https://tgrcode.com/mm2/level_data/{course_code}", timeout=15
+            f"https://tgrcode.com/mm2/course_data/{course_code}", timeout=15
         )
         if response.status_code == 400:
-            raise Exception("get_level_data for code that does not exist")
+            raise Exception("get_course_data for code that does not exist")
 
-        with open(constants.ENCRYPTED_LEVEL_NAME, "wb") as course_file:
+        with open(constants.ENCRYPTED_course_NAME, "wb") as course_file:
             course_file.write(response.content)

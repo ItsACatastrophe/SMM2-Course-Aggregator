@@ -8,14 +8,14 @@ from aggregator.course import Course
 # We write and read from the same file. Perhaps testing when data is saved
 # after writing is in order?
 # TODO: Rename this class, it does more than just writing, also reading and determining
-# new levels
+# new courses
 class Writer:
     SEEN_PATH = "./results/seen.csv"
-    SUPERBALL_COURSES_PATH = "./results/superball_courses.csv"
+    wanted_COURSES_PATH = "./results/wanted_courses.csv"
 
     def __init__(self):
         is_new_seen_file = not os.path.exists(Writer.SEEN_PATH)
-        is_new_superball_course_file = not os.path.exists(Writer.SUPERBALL_COURSES_PATH)
+        is_new_wanted_course_file = not os.path.exists(Writer.wanted_COURSES_PATH)
 
         if is_new_seen_file:
             seen_file = open(Writer.SEEN_PATH, "w+")
@@ -23,13 +23,13 @@ class Writer:
             seen_writer.writeheader()
             seen_file.close()
 
-        if is_new_superball_course_file:
-            superball_file = open(Writer.SUPERBALL_COURSES_PATH, "w+")
-            superball_writer = csv.DictWriter(
-                superball_file, fieldnames=Course.get_course_repr_keys()
+        if is_new_wanted_course_file:
+            wanted_file = open(Writer.wanted_COURSES_PATH, "w+")
+            wanted_writer = csv.DictWriter(
+                wanted_file, fieldnames=Course.get_course_repr_keys()
             )
-            superball_writer.writeheader()
-            superball_file.close()
+            wanted_writer.writeheader()
+            wanted_file.close()
 
     def get_unseen_courses(self, courses_info):
         """
@@ -57,13 +57,13 @@ class Writer:
 
         self.seen_file.close()
 
-    def write_superball_course(self, course: Course):
-        self.superball_file = open(Writer.SUPERBALL_COURSES_PATH, "a")
-        self.superball_writer = csv.DictWriter(
-            self.superball_file, fieldnames=[*Course.get_course_repr_keys(), "played"]
+    def write_wanted_course(self, course: Course):
+        self.wanted_file = open(Writer.wanted_COURSES_PATH, "a")
+        self.wanted_writer = csv.DictWriter(
+            self.wanted_file, fieldnames=[*Course.get_course_repr_keys(), "played"]
         )
 
         course_summary = course.get_course_data()
-        self.superball_writer.writerow(course.get_course_data())
+        self.wanted_writer.writerow(course.get_course_data())
 
-        self.superball_file.close()
+        self.wanted_file.close()
